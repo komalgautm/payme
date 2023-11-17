@@ -1,0 +1,2 @@
+<h1>Failure</h1>
+<img height="40" style="max-height: 40px; width: auto; display: inline-block; margin-right: 10px;" src="https://img.shoplineapp.com/media/image_clips/62943ef1121e54002161a747/original.png"/>
