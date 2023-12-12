@@ -4,15 +4,14 @@
 
 <h2>HTML Forms</h2>
 
-<form action="">
+<form>
     @csrf
-    <input type="hidden" id="token" name="_token" value="{{ csrf_field() }}"/>
-  <label for="fname"> Amount: </label><br>
-  <input type="text" id="amount" name="amount" value="amount"><br>
- 
-  <input type="submit" value="Submit">
+    <input type="hidden" id="token" name="_token" value="">
+    <label for="fname"> Amount: </label>
+    <input type="text" id="amount" name="amount" value="amount"><br>
+    <input type="submit" value="Submit">
 </form> 
-
+<div id="paymentRequest"></div>
 </body>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
@@ -29,42 +28,42 @@
    
                 console.log(data, "Check Tokennnnn");
                 var body = {
-                                "totalAmount": 2.81,
-                                "currencyCode": "HKD",
-                                "effectiveDuration":600,
-                                "notificationUri":"http://127.0.0.1:8000/return",
-                                "appSuccessCallback":"http://127.0.0.1:8000/success",
-                                "appFailCallback":"http://127.0.0.1:8000/failure",
-                                "merchantData": {
-                                    "orderId": "ID12345678",
-                                    "orderDescription": "Description displayed to customer",
-                                    "additionalData": "Arbitrary additional data - logged but not displayed",
-                                    "shoppingCart": [
-                                        {
-                                            "category1": "General categorization",
-                                            "category2": "More specific categorization",
-                                            "category3": "Highly specific categorization",
-                                            "quantity": 1,
-                                            "price": 1,
-                                            "name": "Item 1",
-                                            "sku": "SKU987654321",
-                                            "currencyCode": "HKD"
-                                        },
-                                        {
-                                            "category1": "General categorization",
-                                            "category2": "More specific categorization",
-                                            "category3": "Highly specific categorization",
-                                            "quantity": 2,
-                                            "price": 1,
-                                            "name": "Item 2",
-                                            "sku": "SKU678951234",
-                                            "currencyCode": "HKD"
-                                        }
-                                    ]
-                                }
-                            };
+                            "totalAmount": 2.81,
+                            "currencyCode": "HKD",
+                            "effectiveDuration":600,
+                            "notificationUri":"http://127.0.0.1:8000/return",
+                            "appSuccessCallback":"http://127.0.0.1:8000/success",
+                            "appFailCallback":"http://127.0.0.1:8000/failure",
+                            "merchantData": {
+                                "orderId": "ID12345678",
+                                "orderDescription": "Description displayed to customer",
+                                "additionalData": "Arbitrary additional data - logged but not displayed",
+                                "shoppingCart": [
+                                    {
+                                        "category1": "General categorization",
+                                        "category2": "More specific categorization",
+                                        "category3": "Highly specific categorization",
+                                        "quantity": 1,
+                                        "price": 1,
+                                        "name": "Item 1",
+                                        "sku": "SKU987654321",
+                                        "currencyCode": "HKD"
+                                    },
+                                    {
+                                        "category1": "General categorization",
+                                        "category2": "More specific categorization",
+                                        "category3": "Highly specific categorization",
+                                        "quantity": 2,
+                                        "price": 1,
+                                        "name": "Item 2",
+                                        "sku": "SKU678951234",
+                                        "currencyCode": "HKD"
+                                    }
+                                ]
+                            }
+                        };
                 
-                const date = new Date('2018-08-02T20:17:46.384Z');
+                const date = new Date();
 
                 // Use Date methods to format it as RFC3339
                 const year = date.getUTCFullYear();
@@ -77,15 +76,16 @@
 
                 // Construct the RFC3339 formatted string
                 const rfc3339DateTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}Z`;
-                console.log(rfc3339DateTime);
+                // console.log(rfc3339DateTime);
                 
                 var trace_id =  uuidv4();
 
-                var targetUrl = '/payments/paymentrequests'
+                var targetUrl = '/payments/paymentrequests';
                 var method = 'post';
                 var sha256digest = CryptoJS.SHA256(body);
                 var base64sha256 = CryptoJS.enc.Base64.stringify(sha256digest);
-                var content_length =  JSON.stringify(body).length;            
+                var computedDigest = 'SHA-256=' + base64sha256;
+                var content_length =  JSON.stringify(body).length;    
 
                 var headerHash = {
                     'Request-Date-Time' : '"'+rfc3339DateTime+'"',
@@ -103,8 +103,6 @@
                     headers : ['(request-target)', 'Api-Version', 'Request-Date-Time', 'Trace-Id', 'Authorization', 'Digest']
                 };
                 var signature = computeHttpSignature(config, headerHash);
-                // var computedDigest = 'SHA-256=' + base64sha256;
-                var computedDigest = 'SHA-256=Kuat92wWwJk+SeYuYAAwq4F4MMkD9fVa+xbPEwN2Zew=';
         
                console.log(signature, 'Check First')
                console.log(computedDigest, "Check Digesttttt")
@@ -116,7 +114,7 @@
                     dataType: "json",
                     // async:false,
                     data: {
-                        access_token:  data.accessToken,
+                        access_token: data.accessToken,
                         digest: computedDigest,
                         signature: signature,
                         _token: '{{csrf_token()}}',
@@ -127,6 +125,7 @@
                     success: function(response) {
                         // alert("var");
                         console.log(response);
+                        document.getElementById('paymentRequest').innerHTML = response;
                     }
 
                 });
@@ -148,7 +147,9 @@
     function computeHttpSignature(config, headerHash) {
         var template = 'keyId="${keyId}",algorithm="${algorithm}",headers="${headers}",signature="${signature}"',
             sig = template;
-        
+            console.log("temp" +template)
+            console.log("keyid  " +config.keyId)
+
         // compute sig here
         var signingBase = '';
         config.headers.forEach(function(h){
@@ -167,7 +168,7 @@
                 default : return null;
             }
             }());
-        
+  
         var hash = hashf(signingBase, config.secretkey);
         var signatureOptions = {
                 keyId : config.keyId,

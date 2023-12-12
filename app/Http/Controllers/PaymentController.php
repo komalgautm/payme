@@ -1,20 +1,11 @@
 <?php
 
 namespace App\Http\Controllers;
-use HTTP_Request2;
 use Carbon\Carbon;
 use GuzzleHttp\Client;
 use Illuminate\Support\Str;
-use Session;
-
-use Illuminate\Support\Facades\Hash;
-// use Illuminate\Support\Str;
-use \Firebase\JWT\JWT;
-use Firebase\JWT\Key;   
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Config;
-// use Ramsey\Uuid\Lazy\LazyUuidFromString;
-use Ramsey\Uuid\Uuid;
+use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
@@ -31,7 +22,6 @@ class PaymentController extends Controller
         $authenticationData  = [
             'client_id' =>  env('PAYME_CLIENT_ID'),
             'client_secret' => env('PAYME_CLIENT_SECRET'),
-            // Add other authentication data as required
         ];
 
         $headers = array(
@@ -47,19 +37,92 @@ class PaymentController extends Controller
                 // Add any other options you need here
             ]);
 
-    
             $statusCode = $response->getStatusCode();
-
             $stream = $response->getBody();
             $content = $stream->getContents();
+
+            Log::debug('Authorization Response ', array($response));
             echo $content;
         } catch (\Exception $e) {
             // Handle errors and exceptions
-            return response()->json(['error' => $e->getMessage()], 500);
+            Log::error('Authorization Error',array($e));
+            echo $e->getMessage();
         }
     }
 
     public function index(Request $request){
+
+  
+
+                $curl = curl_init();
+
+                curl_setopt_array($curl, array(
+                CURLOPT_URL => 'https://sandbox.api.payme.hsbc.com.hk/payments/paymentrequests',
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => '',
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 0,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_POSTFIELDS =>'{
+                    "totalAmount": 2.81,
+                    "currencyCode": "HKD",
+                    "effectiveDuration":600,
+                    "notificationUri":"http://127.0.0.1:8000/return",
+                    "appSuccessCallback":"http://127.0.0.1:8000/success",
+                    "appFailCallback":"http://127.0.0.1:8000/failure",
+                    "merchantData": {
+                        "orderId": "ID12345678",
+                        "orderDescription": "Description displayed to customer",
+                        "additionalData": "Arbitrary additional data - logged but not displayed",
+                        "shoppingCart": [
+                            {
+                                "category1": "General categorization",
+                                "category2": "More specific categorization",
+                                "category3": "Highly specific categorization",
+                                "quantity": 1,
+                                "price": 1,
+                                "name": "Item 1",
+                                "sku": "SKU987654321",
+                                "currencyCode": "HKD"
+                            },
+                            {
+                                "category1": "General categorization",
+                                "category2": "More specific categorization",
+                                "category3": "Highly specific categorization",
+                                "quantity": 2,
+                                "price": 1,
+                                "name": "Item 2",
+                                "sku": "SKU678951234",
+                                "currencyCode": "HKD"
+                            }
+                        ]
+                    }
+                }',
+                CURLOPT_HTTPHEADER => array(
+                    'Api-Version: 0.12',
+                    'Content-Type: application/json',
+                    'Accept: application/json',
+                    'Accept-Language: en-US',
+                    'Trace-Id:'.$request->trace,
+                    'Request-Date-Time: '. $request->dateTime,
+                    'Signature: '.$request->signature,
+                    'Digest: SHA-256=b+6JHuuX4BuK9AcC5nuNdh9vX6Ewyv+0UBix+lIimik=',
+                    // . $request->digest,
+                    'Authorization: Bearer '.$request->access_token,
+                    'Cookie: fpc=AsLJ7eQgkU1Lrgguzmh1FRef0Q-mAQAAAPfiBN0OAAAA; stsservicecookie=estsfd; x-ms-gateway-slice=estsfd'
+                ),
+                ));
+
+                $response = curl_exec($curl);
+
+                curl_close($curl);
+                echo $response;
+
+                die;
+
+
 
         $client = new Client();
         $url = 'https://sandbox.api.payme.hsbc.com.hk/payments/paymentrequests';
@@ -112,38 +175,53 @@ class PaymentController extends Controller
                     }
                 }';
 
-                //  $message_body =   json_encode($jsonData);
+                print_r($jsonData);
 
-        try {
-            $response = $client->request('POST', $url, [
-                'headers' => $headers,
-                'body' => $jsonData
-                // Add any other options you need here
-            ]);
+                $response = $client->request('POST', $url, [
+                    'headers' => $headers,
+                    'body' => $jsonData
+                    // Add any other options you need here
+                ]);
 
-            $statusCode = $response->getStatusCode();
-            // $data =  json_decode($response->getBody(), true);
-            $getContents = $response->getBody()->getContents();
-            echo "1";
-            echo "<pre>";
-            // Handle the API response data here
-             echo $getContents;
-            // return response()->json(['status' => 'success', 'data' => $data]);
-        } catch (\GuzzleHttp\Exception\RequestException $e) {
-            // Handle request exceptions, e.g., when the API responds with an error
-            // $errorResponse = $e->getResponse()->getBody()->getContents();
-            $errorResponse = $e->getMessage();
-            echo "2";
-            echo $errorResponse;
-            // return response()->json(['error' => $errorResponse], 400);
-        }
-        
-        catch (\Exception $e) {
-            // Handle errors and exceptions
-            // return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
-            echo "3";
-            echo $e->getMessage();
-        }
+                print_r($response);
+                die;
+    
+                $statusCode = $response->getStatusCode();
+                // $data =  json_decode($response->getBody(), true);
+                $getContents = $response->getBody()->getContents();
+
+
+        // try {
+        //     $response = $client->request('POST', $url, [
+        //         'headers' => $headers,
+        //         'body' => $jsonData
+        //         // Add any other options you need here
+        //     ]);
+
+        //     $statusCode = $response->getStatusCode();
+        //     // $data =  json_decode($response->getBody(), true);
+        //     $getContents = $response->getBody()->getContents();
+        //     echo "1";
+        //     echo "<pre>";
+        //     // Handle the API response data here
+        //      echo $getContents;
+        //      Log::debug('Payment Request ', array($getContents));
+        //     // return response()->json(['status' => 'success', 'data' => $data]);
+        // } catch (\GuzzleHttp\Exception\RequestException $e) {
+        //     // Handle request exceptions, e.g., when the API responds with an error
+        //     // $errorResponse = $e->getResponse()->getBody()->getContents();
+        //     $errorResponse = $e->getMessage();
+        //     echo "2";
+        //     echo $errorResponse;
+        //     Log::error('Payment Request Error',array($e));
+        //     // return response()->json(['error' => $errorResponse], 400);
+        // }catch (\Exception $e) {
+        //     // Handle errors and exceptions
+        //     echo "3";
+        //     echo $e->getMessage();
+        //     Log::error('Payment Request Error',array($e));
+
+        // }
 
     }
     
@@ -353,4 +431,6 @@ class PaymentController extends Controller
     // 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
 
 }
+
+
 

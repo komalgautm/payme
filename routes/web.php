@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PaypalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,8 +19,16 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/create_token', [PaymentController::class, 'authenticate']);
 
+
+Route::get('/createSubscription', [PaypalController::class, 'createSubscription']);
+
+
+
+
+
+
+Route::get('/create_token', [PaymentController::class, 'authenticate']);
 Route::get('/create_payment', [PaymentController::class, 'create_payment']);
 Route::post('/create_payment_form', [PaymentController::class, 'index']);
 // Route::get('/payment', [PaymentController::class, 'index']);
