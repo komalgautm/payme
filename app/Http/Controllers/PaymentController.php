@@ -53,10 +53,8 @@ class PaymentController extends Controller
     public function index(Request $request){
 
   
-
-                $curl = curl_init();
-
-                curl_setopt_array($curl, array(
+            $curl = curl_init();
+            curl_setopt_array($curl, array(
                 CURLOPT_URL => 'https://sandbox.api.payme.hsbc.com.hk/payments/paymentrequests',
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_ENCODING => '',
@@ -71,7 +69,7 @@ class PaymentController extends Controller
                     "effectiveDuration":600,
                     "notificationUri":"http://127.0.0.1:8000/return",
                     "appSuccessCallback":"http://127.0.0.1:8000/success",
-                    "appFailCallback":"http://127.0.0.1:8000/failure",
+                    "appFailCallback":"http://127.0.0.1:80  00/failure",
                     "merchantData": {
                         "orderId": "ID12345678",
                         "orderDescription": "Description displayed to customer",
@@ -81,7 +79,7 @@ class PaymentController extends Controller
                                 "category1": "General categorization",
                                 "category2": "More specific categorization",
                                 "category3": "Highly specific categorization",
-                                "quantity": 1,
+                                "quantity": 1,                                                                                                                                                           
                                 "price": 1,
                                 "name": "Item 1",
                                 "sku": "SKU987654321",
@@ -101,6 +99,7 @@ class PaymentController extends Controller
                     }
                 }',
                 CURLOPT_HTTPHEADER => array(
+                    "(request-target): post /payments/paymentrequests",
                     'Api-Version: 0.12',
                     'Content-Type: application/json',
                     'Accept: application/json',
@@ -108,19 +107,29 @@ class PaymentController extends Controller
                     'Trace-Id:'.$request->trace,
                     'Request-Date-Time: '. $request->dateTime,
                     'Signature: '.$request->signature,
-                    'Digest: SHA-256=b+6JHuuX4BuK9AcC5nuNdh9vX6Ewyv+0UBix+lIimik=',
+                    'Digest:'. $request->digest,
                     // . $request->digest,
-                    'Authorization: Bearer '.$request->access_token,
-                    'Cookie: fpc=AsLJ7eQgkU1Lrgguzmh1FRef0Q-mAQAAAPfiBN0OAAAA; stsservicecookie=estsfd; x-ms-gateway-slice=estsfd'
+                    'Authorization: Bearer '.$request->access_token
+                    // 'Cookie: fpc=AsLJ7eQgkU1Lrgguzmh1FRef0Q-mAQAAAPfiBN0OAAAA; stsservicecookie=estsfd; x-ms-gateway-slice=estsfd'
                 ),
-                ));
+            ));
+            $response = curl_exec($curl);
+            if (curl_errno($curl)) {
+                Log::error('cURL Error: ' . curl_error($curl));
+            }
+            Log::info('API Response Data:', array($response));
+        
+            // Get cURL information, including headers
+            $info = curl_getinfo($curl);
+            Log::info('API Response Data:', array($info));
 
-                $response = curl_exec($curl);
-
-                curl_close($curl);
-                echo $response;
-
-                die;
+            print_r($info);
+            curl_close($curl);
+            echo $response;
+           
+      
+        die;
+      
 
 
 
@@ -128,6 +137,7 @@ class PaymentController extends Controller
         $url = 'https://sandbox.api.payme.hsbc.com.hk/payments/paymentrequests';
 
         $headers = [
+            "(request-target): post /payments/paymentrequests",
             'Api-Version' => '0.12',  
             'Accept' => 'application/json',
             'Content-Type' => 'application/json',
@@ -175,53 +185,72 @@ class PaymentController extends Controller
                     }
                 }';
 
-                print_r($jsonData);
+                // print_r($jsonData);
 
-                $response = $client->request('POST', $url, [
-                    'headers' => $headers,
-                    'body' => $jsonData
-                    // Add any other options you need here
-                ]);
+                // $response = $client->request('POST', $url, [
+                //     'headers' => $headers,
+                //     'body' => $jsonData
+                //     // Add any other options you need here
+                // ]);
 
-                print_r($response);
-                die;
+                // print_r($response);
+                // die;
     
-                $statusCode = $response->getStatusCode();
-                // $data =  json_decode($response->getBody(), true);
-                $getContents = $response->getBody()->getContents();
+                // $statusCode = $response->getStatusCode();
+                // // $data =  json_decode($response->getBody(), true);
+                // $getContents = $response->getBody()->getContents();
 
 
-        // try {
-        //     $response = $client->request('POST', $url, [
-        //         'headers' => $headers,
-        //         'body' => $jsonData
-        //         // Add any other options you need here
-        //     ]);
+        try {
+            $response = $client->request('POST', $url, [
+                'headers' => $headers,
+                'body' => $jsonData
+                // Add any other options you need here
+            ]);
 
-        //     $statusCode = $response->getStatusCode();
-        //     // $data =  json_decode($response->getBody(), true);
-        //     $getContents = $response->getBody()->getContents();
-        //     echo "1";
-        //     echo "<pre>";
-        //     // Handle the API response data here
-        //      echo $getContents;
-        //      Log::debug('Payment Request ', array($getContents));
-        //     // return response()->json(['status' => 'success', 'data' => $data]);
-        // } catch (\GuzzleHttp\Exception\RequestException $e) {
-        //     // Handle request exceptions, e.g., when the API responds with an error
-        //     // $errorResponse = $e->getResponse()->getBody()->getContents();
-        //     $errorResponse = $e->getMessage();
-        //     echo "2";
-        //     echo $errorResponse;
-        //     Log::error('Payment Request Error',array($e));
-        //     // return response()->json(['error' => $errorResponse], 400);
-        // }catch (\Exception $e) {
-        //     // Handle errors and exceptions
-        //     echo "3";
-        //     echo $e->getMessage();
-        //     Log::error('Payment Request Error',array($e));
+            $statusCode = $response->getStatusCode();
+            // $data =  json_decode($response->getBody(), true);
+            $getContents = $response->getBody()->getContents();
+            Log::info('API Response Headers:', $response->getHeaders());
+        
+            echo "1";
+            echo "<pre>";
+            // Handle the API response data here
+             echo $getContents;
+             Log::debug('Payment Request ', array($getContents));
+            // return response()->json(['status' => 'success', 'data' => $data]);
+        } catch (\GuzzleHttp\Exception\RequestException $e) {
+            // Handle request exceptions, e.g., when the API responds with an error
+            // $errorResponse = $e->getResponse()->getBody()->getContents();
 
-        // }
+            if ($e->hasResponse()) {
+                $response = $e->getResponse();
+                Log::info('API Response Headers:', $response->getHeaders());
+                // Get header values from the response
+                $headers = $response->getHeaders();
+                $specificHeader = $response->getHeader('Your-Header-Name');
+        
+                // Handle the exception or extract more information as needed
+                // ...
+            } else {
+                // Handle non-HTTP exceptions
+                // ...
+            }
+
+
+            $errorResponse = $e->getMessage();
+            // Log::info('API Response Headers:', $e->getHeader());
+            echo "2";
+            echo $errorResponse;
+            Log::error('Payment Request Error',array($e));
+            // return response()->json(['error' => $errorResponse], 400);
+        }catch (\Exception $e) {
+            // Handle errors and exceptions
+            echo "3";
+            echo $e->getMessage();
+            Log::error('Payment Request Error',array($e));
+
+        }
 
     }
     
